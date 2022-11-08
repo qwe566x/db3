@@ -1,0 +1,78 @@
+CREATE TABLE  solar_panel(pv_module varchar(10) NOT NULL,installation_charge int(10) NOT NULL, sp_type varchar(10), capacity int(5) NOT NULL, PRIMARY KEY(pv_module));
+CREATE TABLE distributor(tin varchar(10) NOT NULL, name varchar(10) NOT NULL, address varchar(10) NOT NULL, contact varchar(10)NOT NULL, PRIMARY KEY(tin));
+CREATE TABLE user(building_no VARCHAR(10) NOT NULL, name VARCHAR(10) NOT NULL, address varchar(10) NOT NULL, PRIMARY KEY (building_no));
+
+
+CREATE TABLE sold_by(v_tin varchar(10) NOT NULL, pv_module varchar(10),PRIMARY KEY(v_tin,pv_module),  FOREIGN KEY (v_tin)  REFERENCES distributor(tin),
+FOREIGN KEY (pv_module) REFERENCES solar_panel(pv_module));
+CREATE TABLE purchase(pv_module varchar(10) NOT NULL, building_no varchar(10) NOT NULL, PRIMARY KEY(pv_module,building_no),  FOREIGN KEY (pv_module) REFERENCES solar_panel(pv_module), FOREIGN KEY (building_no) REFERENCES user(building_no));
+CREATE TABLE installation(tin varchar(10) NOT NULL,pv_module varchar(10) NOT NULL, building_no varchar(10) NOT NULL, idate DATE NOT NULL, charge int(5)
+NOT NULL, ptype varchar(10) NOT NULL, PRIMARY KEY(tin,pv_module,building_no),FOREIGN KEY (tin) REFERENCES distributor(tin), FOREIGN KEY (pv_module) REFERENCES solar_panel(pv_module), FOREIGN KEY (building_no) REFERENCES user(building_no));
+
+
+ALTER TABLE sold_by ADD quantity int(5) NOT NULL;
+INSERT INTO solar_panel values("p10",20000,"mono",20);
+INSERT INTO solar_panel values("p11",21000,"poly",11);
+INSERT INTO solar_panel values("p12",25000,"mono",12);
+INSERT INTO solar_panel values("p13",27000,"poly",15);
+INSERT INTO solar_panel values("p14",3000,"mono",16);
+
+
+INSERT INTO distributor VALUES("t10","sahil","banglore","9480198558");
+INSERT INTO distributor VALUES("t11","shreyas","banglore","9480198559");
+INSERT INTO distributor VALUES("t12","Tejas","Karwar","9480198560");
+INSERT INTO distributor VALUES("t13","Amit","Karwar","9480198561");
+ INSERT INTO distributor VALUES("t14","Ajit","Mysore","9480198562");
+
+
+ INSERT INTO user VALUES("b10","Abhi","Kumta");
+INSERT INTO user VALUES("b10","Abhi","Kumta");
+INSERT INTO user VALUES("b11","Archana","Kumta");
+INSERT INTO user VALUES("b12","Ashwini","sirsi");
+INSERT INTO user VALUES("b13","Nandaraj","sirsi");
+INSERT INTO user VALUES("b14","Nagaratna","dharwad");
+INSERT INTO user VALUES("b15","Shreya","bangalore");
+
+
+INSERT INTO sold_by VALUES("t10","p10",5);
+INSERT INTO sold_by VALUES("t10","p11",5);
+INSERT INTO sold_by VALUES("t10","p13",5);
+INSERT INTO sold_by VALUES("t11","p11",5);
+INSERT INTO sold_by VALUES("t12","p11",5);
+INSERT INTO sold_by VALUES("t13","p12",5);
+
+
+INSERT INTO purchase VALUES("p10","b10");
+INSERT INTO purchase VALUES("p11","b10");
+INSERT INTO purchase VALUES("p11","b11");
+INSERT INTO purchase VALUES("p11","b12");
+INSERT INTO purchase VALUES("p11","b14");
+INSERT INTO purchase VALUES("p12","b11");
+INSERT INTO purchase VALUES("p12","b14");
+INSERT INTO purchase VALUES("p13","b14");
+
+INSERT INTO installation VALUES("t10","p10","b10","2020-02-02",20000,"domestic");
+INSERT INTO installation VALUES("t10","p11","b10","2020-02-02",21000,"domestic");
+INSERT INTO installation VALUES("t11","p11","b11","2020-02-02",21000,"commercial");
+INSERT INTO installation VALUES("t11","p11","b14","2020-02-02",21000,"commerical");
+INSERT INTO installation VALUES("t11","p12","b11","2020-02-02",21000,"domestic");
+INSERT INTO installation VALUES("t11","p12","b12","2020-02-02",21000,"commercial");
+
+select d.name,count(d.tin) from distributor d,installation i where i.tin = d.tin and i.ptype = "domestic" group by d.tin order by max(d.tin);
+
+
+select distinct u.address, u.building_no from user u,solar_panel p, installation i where u.building_no = i.building_no and p.pv_module = i.pv_module and p.sp_type = "mono";
+
+
+select u.address from user u,solar_panel p, installation i where u.building_no = i.building_no and p.pv_module = i.pv_module and p.capacity =(select max(capacity) from solar_panel)
+
+
+select u.address, sum(i.charge) from user u,  installation i, solar_panel s where u.building_no = i.building_no and s.pv_module =
+ i.pv_module and s.sp_type ="poly" and exists(select u.address from user u, installation i, solar_panel s where u.building_no   = i.building_no
+and s.pv_module = i.pv_module and s.sp_type = "mono") group by address;
+
+
+select d.*, s.* ,i.idate from distributor d, solar_panel s , installation i where d.tin = i.tin and s.pv_module = i.pv_module and i.idate in (select min(idate) from installation);
+
+
+select d.sp_type, avg(d.charge) from (select a.*, b.capacity, c.address, b.sp_type from installation a inner join solar_panel b on a.pv_module = b.pv_module inner join user c on c.building_no =a.building_no where a.ptype = "commerical") as d GROUP by d.sp_type;
